@@ -1,4 +1,4 @@
-# Cambios realizados para solucionar el problema de cookies de Supabase
+cl# Cambios realizados para solucionar el problema de cookies de Supabase
 
 ## Problema identificado:
 Las cookies de Supabase no se estaban estableciendo correctamente después del login con Google OAuth, causando que el middleware no detectara la sesión y redirigiera al usuario al login.

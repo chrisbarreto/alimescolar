@@ -214,17 +214,49 @@ model Plato {
   pesoPorPorcion Decimal?  @map("peso_por_porcion") @db.Decimal(10, 2)
   rendimiento    Int?
   observaciones  String?
-  nivelInicial   Decimal?  @map("nivel_inicial") @db.Decimal(10, 2)
-  edadEscolar    Decimal?  @map("edad_escolar") @db.Decimal(10, 2)
-  adolescentes   Decimal?  @db.Decimal(10, 2)
   createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
 
   // relaciones
-  menuDiaPlato  MenuDiaPlato[]
-  organizacion  Organizacion @relation(fields: [idOrganizacion], references: [idOrganizacion], onDelete: NoAction, onUpdate: NoAction)
-  recetaPlato   RecetaPlato[]
+  menuDiaPlato         MenuDiaPlato[]
+  organizacion         Organizacion @relation(fields: [idOrganizacion], references: [idOrganizacion], onDelete: NoAction, onUpdate: NoAction)
+  recetaPlato          RecetaPlato[]
+  porcionNivelEscolar  PorcionNivelEscolar[]
 
   @@map("plato")
+}
+
+model NivelEscolar {
+  idNivelEscolar   String   @id @default(dbgenerated("gen_random_uuid()")) @map("id_nivel_escolar") @db.Uuid
+  nombre           String   @unique @db.VarChar(50) // "INICIAL", "PRIMER_SEGUNDO_CICLO", "TERCER_CICLO"
+  descripcion      String?  @db.VarChar(255)
+  edadMinima       Int?     @map("edad_minima")
+  edadMaxima       Int?     @map("edad_maxima")
+  orden            Int      @unique // Para ordenar los niveles: 1, 2, 3
+  activo           Boolean  @default(true)
+  createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // relaciones
+  porcionNivelEscolar PorcionNivelEscolar[]
+
+  @@map("nivel_escolar")
+}
+
+model PorcionNivelEscolar {
+  idPorcion        String   @id @default(dbgenerated("gen_random_uuid()")) @map("id_porcion") @db.Uuid
+  idPlato          String   @map("id_plato") @db.Uuid
+  idNivelEscolar   String   @map("id_nivel_escolar") @db.Uuid
+  cantidad         Decimal  @db.Decimal(10, 2)
+  idUnidadMedida   String   @map("id_unidad_medida") @db.Uuid
+  observaciones    String?
+  createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // relaciones
+  plato          Plato          @relation(fields: [idPlato], references: [idPlato], onDelete: Cascade)
+  nivelEscolar   NivelEscolar   @relation(fields: [idNivelEscolar], references: [idNivelEscolar], onDelete: NoAction, onUpdate: NoAction)
+  unidadMedida   UnidadMedida   @relation(fields: [idUnidadMedida], references: [idUnidadMedida], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([idPlato, idNivelEscolar])
+  @@map("porcion_nivel_escolar")
 }
 
 model RecetaPlato {
@@ -277,6 +309,7 @@ model UnidadMedida {
   insumo               Insumo[]
   ordenCompraDetalle   OrdenCompraDetalle[]
   recetaPlato          RecetaPlato[]
+  porcionNivelEscolar  PorcionNivelEscolar[]
 
   @@map("unidad_medida")
 }
