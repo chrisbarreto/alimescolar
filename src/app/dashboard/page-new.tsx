@@ -5,12 +5,12 @@ import DashboardLayout from '@/components/layout/DashboardLayout'
 import { 
   FoodIcon, 
   InventoryIcon, 
+  OrganizationIcon, 
   UsersIcon,
   ChartIcon 
 } from '@/components/icons'
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { useRouter } from 'next/navigation'
 
 interface DashboardStats {
   menusActivos: {
@@ -21,6 +21,11 @@ interface DashboardStats {
   productos: {
     count: number
     nuevos: number
+    tipo: string
+  }
+  organizaciones: {
+    count: number
+    nuevas: number
     tipo: string
   }
   usuarios: {
@@ -51,40 +56,6 @@ export default function DashboardPage() {
   const [activity, setActivity] = useState<DashboardActivity | null>(null)
   const [statsLoading, setStatsLoading] = useState(true)
   const [activityLoading, setActivityLoading] = useState(true)
-  const router = useRouter()
-
-  useEffect(() => {
-    const verifyUserOrganization = async () => {
-      if (session && session.user) {
-        try {
-          const response = await fetch('/api/user/check-organization', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              supabaseId: session.user.id,
-              email: session.user.email
-            })
-          })
-
-          const data = await response.json()
-
-          if (!data.hasOrganization) {
-            console.log('📝 Usuario sin organización, redirigiendo...')
-            router.push('/auth/choose-organization')
-            return
-          }
-
-          console.log('✅ Usuario con organización verificada')
-        } catch (error) {
-          console.error('Error verificando organización:', error)
-        }
-      }
-    }
-
-    verifyUserOrganization()
-  }, [session, router])
 
   useEffect(() => {
     if (userSession && session) {
@@ -178,7 +149,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Estadísticas principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         {/* Menús Activos */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="p-4">
@@ -232,6 +203,35 @@ export default function DashboardPage() {
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <p className="text-xs text-gray-500">
                 {statsLoading ? 'Cargando...' : `${stats?.productos.nuevos || 0} ${stats?.productos.tipo || 'nuevos'}`}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Organizaciones */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <OrganizationIcon className="w-4 h-4 text-purple-600" />
+                </div>
+                <h3 className="font-medium text-gray-900">Organizaciones</h3>
+              </div>
+            </div>
+            <div className="mb-2">
+              {statsLoading ? (
+                <div className="animate-pulse">
+                  <div className="h-8 bg-gray-200 rounded w-16"></div>
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-gray-900">{stats?.organizaciones.count || 0}</p>
+              )}
+            </div>
+            <div className="flex items-center space-x-1">
+              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
+              <p className="text-xs text-gray-500">
+                {statsLoading ? 'Cargando...' : `${stats?.organizaciones.nuevas || 0} ${stats?.organizaciones.tipo || 'nuevas'}`}
               </p>
             </div>
           </div>

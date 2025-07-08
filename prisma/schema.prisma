@@ -303,6 +303,7 @@ model AuthUser {
   idAuthUser String @id @default(dbgenerated("gen_random_uuid()")) @map("id_auth_user") @db.Uuid
   email      String @unique @db.VarChar(255)
   password   String @db.VarChar(255)
+  supabaseId String? @unique @map("supabase_id") @db.VarChar(255)
   idUsuario  String @map("id_usuario") @db.Uuid
   usuario    Usuario @relation("UsuarioToAuthUser", fields: [idUsuario], references: [idUsuario], onDelete: Cascade)
 

@@ -1,6 +1,35 @@
 import { NextResponse } from 'next/server'
-import { createRouteHandlerClient } from '@supabase/auth-helpers-nextjs'
-import { cookies } from 'next/headers'
+import { createSupabaseServerClient } from '@/lib/supabaseServer'
+
+export async function GET() {
+  try {
+    const supabase = await createSupabaseServerClient()
+    
+    const { data: { session }, error } = await supabase.auth.getSession()
+    
+    if (error) {
+      console.error('Error obteniendo sesión:', error)
+      return NextResponse.json({ error: error.message }, { status: 400 })
+    }
+    
+    if (!session) {
+      return NextResponse.json({ session: null }, { status: 200 })
+    }
+    
+    return NextResponse.json({ 
+      session: {
+        user: {
+          id: session.user.id,
+          email: session.user.email
+        }
+      }
+    })
+    
+  } catch (error) {
+    console.error('Error en endpoint de sesión:', error)
+    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 })
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -13,8 +42,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const cookieStore = cookies()
-    const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+    const supabase = await createSupabaseServerClient()
 
     // Establecer la sesión en el servidor
     const { data: { session }, error } = await supabase.auth.setSession({

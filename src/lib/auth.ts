@@ -48,11 +48,10 @@ export class AuthService {
       
       if (!response.ok) throw new Error(data.error || 'Error de autenticación')
       
-      // Si recibimos session de Supabase, establecer sesión en cliente y servidor
+      // Establecer sesión de Supabase en cliente
       if (data.session) {
         console.log('🔑 Estableciendo sesión de Supabase en cliente...')
         
-        // 1. Establecer en el cliente
         const { data: sessionData, error } = await supabase.auth.setSession({
           access_token: data.session.access_token,
           refresh_token: data.session.refresh_token
@@ -65,7 +64,7 @@ export class AuthService {
         
         console.log('✅ Sesión establecida en cliente')
 
-        // 2. Establecer en el servidor para que el middleware pueda verla
+        // Establecer en el servidor para que el middleware pueda verla
         console.log('🔑 Estableciendo sesión en servidor...')
         
         const serverResponse = await fetch('/api/auth/session', {
@@ -106,12 +105,12 @@ export class AuthService {
     }
   }
 
-  // LOGOUT - usando Supabase Auth real en cliente y servidor
+  // LOGOUT - usando Supabase Auth real
   static async signOut() {
     try {
       console.log('🚪 Cerrando sesión...')
       
-      // 1. Cerrar sesión en el servidor primero (para limpiar cookies server-side)
+      // 1. Cerrar sesión en el servidor primero
       console.log('🔓 Cerrando sesión en servidor...')
       try {
         const response = await fetch('/api/auth/logout', {
@@ -128,7 +127,7 @@ export class AuthService {
         console.warn('⚠️ Error de conexión con servidor logout, continuando...', serverError)
       }
       
-      // 2. Cerrar sesión en el cliente (esto también debería limpiar cookies client-side)
+      // 2. Cerrar sesión en el cliente
       console.log('🔓 Cerrando sesión en cliente...')
       try {
         const { error } = await supabase.auth.signOut()
@@ -141,32 +140,15 @@ export class AuthService {
         console.warn('⚠️ Error cerrando sesión cliente:', clientError)
       }
 
-      // 3. Limpiar datos locales como respaldo
+      // 3. Limpiar datos locales
       console.log('🧹 Limpiando datos locales...')
       localStorage.removeItem('userSession')
-      
-      // 4. Limpiar cualquier cookie residual del lado del cliente
-      console.log('🧹 Limpiando cookies del cliente...')
-      const cookiesToClear = ['supabase-auth-token', 'sb-access-token', 'sb-refresh-token']
-      cookiesToClear.forEach(cookieName => {
-        document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0`
-      })
       
       console.log('✅ Sesión cerrada exitosamente')
     } catch (error) {
       console.error('❌ Error al cerrar sesión:', error)
       // Limpiar localStorage incluso si hay error
       localStorage.removeItem('userSession')
-      
-      // Intentar limpiar cookies como último recurso
-      try {
-        const cookiesToClear = ['supabase-auth-token', 'sb-access-token', 'sb-refresh-token']
-        cookiesToClear.forEach(cookieName => {
-          document.cookie = `${cookieName}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0`
-        })
-      } catch (cookieError) {
-        console.warn('⚠️ Error limpiando cookies:', cookieError)
-      }
     }
   }
 
@@ -204,5 +186,46 @@ export class AuthService {
   static async isAuthenticated(): Promise<boolean> {
     const session = await this.getCurrentSession()
     return !!session
+  }
+}
+
+// Función para verificar JWT de Supabase
+export async function verifyJWT(token: string) {
+  try {
+    const { data, error } = await supabase.auth.getUser(token)
+    if (error) throw error
+    
+    if (!data.user) return null
+    
+    // Buscar el usuario en nuestra base de datos
+    const { PrismaClient } = await import('@prisma/client')
+    const prisma = new PrismaClient()
+    
+    try {
+      const authUser = await prisma.authUser.findUnique({
+        where: { email: data.user.email! },
+        include: {
+          usuario: {
+            include: {
+              persona: true,
+              organizacion: true
+            }
+          }
+        }
+      })
+      
+      if (!authUser) return null
+      
+      return {
+        userId: authUser.usuario.idUsuario,
+        email: data.user.email,
+        usuario: authUser.usuario
+      }
+    } finally {
+      await prisma.$disconnect()
+    }
+  } catch (error) {
+    console.error('Error verificando JWT:', error)
+    return null
   }
 }
