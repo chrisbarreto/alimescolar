@@ -20,10 +20,19 @@ export async function seedPorcionesEjemplo() {
     return;
   }
 
-  // Crear un plato de ejemplo
-  const organizacion = await prisma.organizacion.findFirst();
-  if (!organizacion) {
-    console.error('❌ No se encontró ninguna organización');
+  // Obtener la primera escuela disponible
+  const escuela = await prisma.escuela.findFirst();
+  if (!escuela) {
+    console.error('❌ No se encontró ninguna escuela');
+    return;
+  }
+
+  // Obtener tipo de plato "Almuerzo"
+  const tipoAlmuerzo = await prisma.tipoPlato.findFirst({
+    where: { nombre: 'Almuerzo' }
+  });
+  if (!tipoAlmuerzo) {
+    console.error('❌ No se encontró el tipo de plato "Almuerzo"');
     return;
   }
 
@@ -31,10 +40,9 @@ export async function seedPorcionesEjemplo() {
     data: {
       nombre: 'Salsa de Legumbres con Arroz quesú',
       descripcion: 'Salsa de legumbres con arroz y queso',
-      tipo: 'PRINCIPAL',
-      idOrganizacion: organizacion.idOrganizacion,
-      energiaKcal: 450,
-      observaciones: 'Plato principal nutritivo'
+      esEjemplo: true,
+      idTipoPlato: tipoAlmuerzo.idTipoPlato,
+      idEscuela: escuela.idEscuela
     }
   });
 

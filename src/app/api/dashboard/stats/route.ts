@@ -44,12 +44,8 @@ export async function GET(request: Request) {
         }
       }),
       
-      // Total de productos/insumos
-      prisma.insumo.count({
-        where: {
-          idOrganizacion: user.idOrganizacion
-        }
-      }),
+      // Total de productos/insumos - temporalmente 0 ya que no hay relación con organización
+      Promise.resolve(0),
       
       // Total de usuarios en la organización
       prisma.usuario.count({
@@ -90,15 +86,8 @@ export async function GET(request: Request) {
       })
     ])
 
-    // Productos recientes (creados en los últimos 7 días)
-    const productosRecientes = await prisma.insumo.count({
-      where: {
-        idOrganizacion: user.idOrganizacion,
-        createdAt: {
-          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-        }
-      }
-    })
+    // Productos recientes - temporalmente 0 ya que no hay relación con organización
+    const productosRecientes = 0
 
     // Organizaciones nuevas (últimos 30 días) - removido ya que no se usa
 

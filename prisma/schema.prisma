@@ -9,7 +9,7 @@ datasource db {
 }
 
 model Ciudad {
-  idCiudad      Int              @id @map("id_ciudad")
+  idCiudad      Int              @id @default(autoincrement()) @map("id_ciudad")
   nombreCiudad  String           @map("nombre_ciudad") @db.VarChar(100)
   createdAt     DateTime?        @default(now()) @map("created_at") @db.Timestamp(6)
 
@@ -35,6 +35,7 @@ model Escuela {
   escuelaEncargado EscuelaEncargado[]
   menuSemanal      MenuSemanal[]
   ordenCompra      OrdenCompra[]
+  platos           Plato[]
 
   @@map("escuela")
 }
@@ -57,18 +58,16 @@ model EscuelaEncargado {
 
 model Insumo {
   idInsumo        String         @id @default(dbgenerated("gen_random_uuid()")) @map("id_insumo") @db.Uuid
-  idOrganizacion  String         @map("id_organizacion") @db.Uuid
   nombreInsumo    String         @map("nombre_insumo") @db.VarChar(255)
   descripcion     String?        @db.VarChar(255)
-  idTipoInsumo    String         @map("id_tipo_insumo") @db.Uuid
-  idUnidadMedida  String         @map("id_unidad_medida") @db.Uuid
+  idTipoInsumo    Int            @map("id_tipo_insumo")
+  idUnidadMedida  Int            @map("id_unidad_medida")
   codigoBarra     String?        @unique @map("codigo_barra") @db.VarChar(20)
   createdAt       DateTime?      @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt       DateTime?      @default(now()) @map("updated_at") @db.Timestamp(6)
   deletedAt       DateTime?      @map("deleted_at") @db.Timestamp(6)
 
   // relaciones
-  organizacion       Organizacion       @relation(fields: [idOrganizacion], references: [idOrganizacion], onDelete: NoAction, onUpdate: NoAction)
   tipoInsumo         TipoInsumo         @relation(fields: [idTipoInsumo], references: [idTipoInsumo], onDelete: NoAction, onUpdate: NoAction)
   unidadMedida       UnidadMedida       @relation(fields: [idUnidadMedida], references: [idUnidadMedida], onDelete: NoAction, onUpdate: NoAction)
   ordenCompraDetalle OrdenCompraDetalle[]
@@ -143,7 +142,7 @@ model OrdenCompraDetalle {
   idOrdenCompra  String   @map("id_orden_compra") @db.Uuid
   idInsumo       String   @map("id_insumo") @db.Uuid
   cantidad       Decimal  @db.Decimal(12, 3)
-  idUnidadMedida String   @map("id_unidad_medida") @db.Uuid
+  idUnidadMedida Int      @map("id_unidad_medida")
   precioUnitario Decimal? @map("precio_unitario") @db.Decimal(12, 2)
   observaciones  String?
 
@@ -170,10 +169,8 @@ model Organizacion {
 
   // relaciones
   escuela        Escuela[]
-  insumo         Insumo[]
   menuSemanal    MenuSemanal[]
   ciudad         Ciudad?    @relation(fields: [idCiudad], references: [idCiudad], onDelete: NoAction, onUpdate: NoAction)
-  plato          Plato[]
   usuario        Usuario[]
 
   @@map("organizaciones")
@@ -204,29 +201,27 @@ model Persona {
 }
 
 model Plato {
-  idPlato        String    @id @default(dbgenerated("gen_random_uuid()")) @map("id_plato") @db.Uuid
-  nombre         String    @db.VarChar(100)
-  descripcion    String?
-  tipo           String?   @db.VarChar(50)
-  idOrganizacion String    @map("id_organizacion") @db.Uuid
-  preparacion    String?
-  energiaKcal    Int?      @map("energia_kcal")
-  pesoPorPorcion Decimal?  @map("peso_por_porcion") @db.Decimal(10, 2)
-  rendimiento    Int?
-  observaciones  String?
-  createdAt      DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  idPlato           String    @id @default(dbgenerated("gen_random_uuid()")) @map("id_plato") @db.Uuid
+  nombre            String    @db.VarChar(255)
+  descripcion       String?   @db.Text
+  esEjemplo         Boolean   @default(false) @map("es_ejemplo")
+  idTipoPlato       Int       @map("id_tipo_plato")
+  idEscuela         String    @map("id_escuela") @db.Uuid
+  createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+  updatedAt         DateTime? @updatedAt @map("updated_at") @db.Timestamp(6)
 
   // relaciones
-  menuDiaPlato         MenuDiaPlato[]
-  organizacion         Organizacion @relation(fields: [idOrganizacion], references: [idOrganizacion], onDelete: NoAction, onUpdate: NoAction)
-  recetaPlato          RecetaPlato[]
-  porcionNivelEscolar  PorcionNivelEscolar[]
+  tipoPlato       TipoPlato             @relation(fields: [idTipoPlato], references: [idTipoPlato])
+  escuela         Escuela               @relation(fields: [idEscuela], references: [idEscuela])
+  porciones       PorcionNivelEscolar[]
+  menuDiaPlato    MenuDiaPlato[]
+  recetaPlato     RecetaPlato[]
 
   @@map("plato")
 }
 
 model NivelEscolar {
-  idNivelEscolar   String   @id @default(dbgenerated("gen_random_uuid()")) @map("id_nivel_escolar") @db.Uuid
+  idNivelEscolar   Int      @id @default(autoincrement()) @map("id_nivel_escolar")
   nombre           String   @unique @db.VarChar(50) // "INICIAL", "PRIMER_SEGUNDO_CICLO", "TERCER_CICLO"
   descripcion      String?  @db.VarChar(255)
   edadMinima       Int?     @map("edad_minima")
@@ -244,9 +239,9 @@ model NivelEscolar {
 model PorcionNivelEscolar {
   idPorcion        String   @id @default(dbgenerated("gen_random_uuid()")) @map("id_porcion") @db.Uuid
   idPlato          String   @map("id_plato") @db.Uuid
-  idNivelEscolar   String   @map("id_nivel_escolar") @db.Uuid
+  idNivelEscolar   Int      @map("id_nivel_escolar")
   cantidad         Decimal  @db.Decimal(10, 2)
-  idUnidadMedida   String   @map("id_unidad_medida") @db.Uuid
+  idUnidadMedida   Int      @map("id_unidad_medida")
   observaciones    String?
   createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
 
@@ -263,7 +258,7 @@ model RecetaPlato {
   idPlato         String   @map("id_plato") @db.Uuid
   idInsumo        String   @map("id_insumo") @db.Uuid
   cantidadPorRacion Decimal @map("cantidad_por_racion") @db.Decimal(10, 3)
-  idUnidadMedida  String   @map("id_unidad_medida") @db.Uuid
+  idUnidadMedida  Int      @map("id_unidad_medida")
   pesoBruto       Decimal? @map("peso_bruto") @db.Decimal(10, 3)
   pesoNeto        Decimal? @map("peso_neto") @db.Decimal(10, 3)
 
@@ -277,7 +272,7 @@ model RecetaPlato {
 }
 
 model TipoDocumento {
-  idTipoDocumento   Int       @id @map("id_tipo_documento")
+  idTipoDocumento   Int       @id @default(autoincrement()) @map("id_tipo_documento")
   descTipoDocumento String    @map("desc_tipo_documento") @db.VarChar(100)
   createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
 
@@ -287,9 +282,24 @@ model TipoDocumento {
   @@map("tipo_documento")
 }
 
+model TipoPlato {
+  idTipoPlato   Int       @id @default(autoincrement()) @map("id_tipo_plato")
+  nombre        String    @db.VarChar(50)
+  descripcion   String?   @db.VarChar(255)
+  orden         Int       @unique // Para ordenar: 1=almuerzo, 2=ensalada, 3=postre
+  activo        Boolean   @default(true)
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
+
+  // relaciones
+  platos Plato[]
+
+  @@map("tipo_plato")
+}
+
 model TipoInsumo {
-  idTipoInsumo  String  @id @default(dbgenerated("gen_random_uuid()")) @map("id_tipo_insumo") @db.Uuid
+  idTipoInsumo  Int     @id @default(autoincrement()) @map("id_tipo_insumo")
   descTipoInsumo String @map("desc_tipo_insumo") @db.VarChar(100)
+  createdAt     DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
 
   // relaciones
   insumo Insumo[]
@@ -298,7 +308,7 @@ model TipoInsumo {
 }
 
 model UnidadMedida {
-  idUnidadMedida   String    @id @default(dbgenerated("gen_random_uuid()")) @map("id_unidad_medida") @db.Uuid
+  idUnidadMedida   Int       @id @default(autoincrement()) @map("id_unidad_medida")
   descUnidadMedida String    @map("desc_unidad_medida") @db.VarChar(250)
   abreviatura      String    @db.VarChar(10)
   createdAt        DateTime? @default(now()) @map("created_at") @db.Timestamp(6)

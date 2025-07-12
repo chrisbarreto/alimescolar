@@ -3,8 +3,10 @@ import { PrismaClient } from '@prisma/client'
 export async function seedOrganizacion(prisma: PrismaClient) {
   console.log('🏢 Creando organización base...')
 
-  await prisma.organizacion.create({
-    data: {
+  await prisma.organizacion.upsert({
+    where: { ruc: '80000001-1' },
+    update: {},
+    create: {
       razonSocial: 'Ministerio de Educación y Ciencias',
       ruc: '80000001-1',
       direccion: 'Chile 128 entre Palma y Alberdi',
@@ -15,8 +17,10 @@ export async function seedOrganizacion(prisma: PrismaClient) {
   })
 
   // Organización de ejemplo para testing
-  await prisma.organizacion.create({
-    data: {
+  await prisma.organizacion.upsert({
+    where: { ruc: '80000002-2' },
+    update: {},
+    create: {
       razonSocial: 'Supervisión de Alimentación Escolar Central',
       ruc: '80000002-2',
       direccion: 'Av. Mariscal López 1234',

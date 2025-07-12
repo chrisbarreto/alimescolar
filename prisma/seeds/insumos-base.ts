@@ -3,11 +3,7 @@ import { PrismaClient } from '@prisma/client'
 export async function seedInsumosBase(prisma: PrismaClient) {
   console.log('🥬 Creando insumos básicos...')
 
-  // Obtener IDs necesarios
-  const organizacion = await prisma.organizacion.findFirst({
-    where: { ruc: '80000001-1' }
-  })
-
+  // Obtener tipos de insumo
   const tipoVerdura = await prisma.tipoInsumo.findFirst({
     where: { descTipoInsumo: 'Verduras y Hortalizas' }
   })
@@ -28,6 +24,7 @@ export async function seedInsumosBase(prisma: PrismaClient) {
     where: { descTipoInsumo: 'Cereales y Granos' }
   })
 
+  // Obtener unidades de medida
   const kg = await prisma.unidadMedida.findFirst({
     where: { abreviatura: 'kg' }
   })
@@ -40,7 +37,17 @@ export async function seedInsumosBase(prisma: PrismaClient) {
     where: { abreviatura: 'u' }
   })
 
-  if (!organizacion || !tipoVerdura || !tipoFruta || !tipoCarne || !tipoLacteo || !tipoCereal || !kg || !litro || !unidad) {
+  if (!tipoVerdura || !tipoFruta || !tipoCarne || !tipoLacteo || !tipoCereal || !kg || !litro || !unidad) {
+    console.log('❌ Tipos encontrados:', {
+      tipoVerdura: tipoVerdura?.descTipoInsumo,
+      tipoFruta: tipoFruta?.descTipoInsumo,
+      tipoCarne: tipoCarne?.descTipoInsumo,
+      tipoLacteo: tipoLacteo?.descTipoInsumo,
+      tipoCereal: tipoCereal?.descTipoInsumo,
+      kg: kg?.abreviatura,
+      litro: litro?.abreviatura,
+      unidad: unidad?.abreviatura
+    })
     throw new Error('No se encontraron los tipos o unidades necesarias')
   }
 
@@ -48,7 +55,6 @@ export async function seedInsumosBase(prisma: PrismaClient) {
     data: [
       // Verduras y Hortalizas
       {
-        idOrganizacion: organizacion.idOrganizacion,
         nombreInsumo: 'Tomate',
         descripcion: 'Tomate fresco',
         idTipoInsumo: tipoVerdura.idTipoInsumo,
@@ -56,7 +62,6 @@ export async function seedInsumosBase(prisma: PrismaClient) {
         codigoBarra: '7891000001',
       },
       {
-        idOrganizacion: organizacion.idOrganizacion,
         nombreInsumo: 'Cebolla',
         descripcion: 'Cebolla blanca',
         idTipoInsumo: tipoVerdura.idTipoInsumo,
@@ -64,7 +69,6 @@ export async function seedInsumosBase(prisma: PrismaClient) {
         codigoBarra: '7891000002',
       },
       {
-        idOrganizacion: organizacion.idOrganizacion,
         nombreInsumo: 'Zanahoria',
         descripcion: 'Zanahoria fresca',
         idTipoInsumo: tipoVerdura.idTipoInsumo,
@@ -72,7 +76,6 @@ export async function seedInsumosBase(prisma: PrismaClient) {
         codigoBarra: '7891000003',
       },
       {
-        idOrganizacion: organizacion.idOrganizacion,
         nombreInsumo: 'Lechuga',
         descripcion: 'Lechuga crespa',
         idTipoInsumo: tipoVerdura.idTipoInsumo,
@@ -82,7 +85,6 @@ export async function seedInsumosBase(prisma: PrismaClient) {
       
       // Frutas
       {
-        idOrganizacion: organizacion.idOrganizacion,
         nombreInsumo: 'Banana',
         descripcion: 'Banana madura',
         idTipoInsumo: tipoFruta.idTipoInsumo,
@@ -90,7 +92,6 @@ export async function seedInsumosBase(prisma: PrismaClient) {
         codigoBarra: '7891000005',
       },
       {
-        idOrganizacion: organizacion.idOrganizacion,
         nombreInsumo: 'Naranja',
         descripcion: 'Naranja jugosa',
         idTipoInsumo: tipoFruta.idTipoInsumo,
@@ -100,7 +101,6 @@ export async function seedInsumosBase(prisma: PrismaClient) {
       
       // Carnes
       {
-        idOrganizacion: organizacion.idOrganizacion,
         nombreInsumo: 'Carne de Res',
         descripcion: 'Carne de res magra',
         idTipoInsumo: tipoCarne.idTipoInsumo,
@@ -108,7 +108,6 @@ export async function seedInsumosBase(prisma: PrismaClient) {
         codigoBarra: '7891000007',
       },
       {
-        idOrganizacion: organizacion.idOrganizacion,
         nombreInsumo: 'Pollo',
         descripcion: 'Pollo entero',
         idTipoInsumo: tipoCarne.idTipoInsumo,
@@ -118,7 +117,6 @@ export async function seedInsumosBase(prisma: PrismaClient) {
       
       // Lácteos
       {
-        idOrganizacion: organizacion.idOrganizacion,
         nombreInsumo: 'Leche',
         descripcion: 'Leche entera',
         idTipoInsumo: tipoLacteo.idTipoInsumo,
@@ -126,7 +124,6 @@ export async function seedInsumosBase(prisma: PrismaClient) {
         codigoBarra: '7891000009',
       },
       {
-        idOrganizacion: organizacion.idOrganizacion,
         nombreInsumo: 'Huevo',
         descripcion: 'Huevo de gallina',
         idTipoInsumo: tipoLacteo.idTipoInsumo,
@@ -136,7 +133,6 @@ export async function seedInsumosBase(prisma: PrismaClient) {
       
       // Cereales
       {
-        idOrganizacion: organizacion.idOrganizacion,
         nombreInsumo: 'Arroz',
         descripcion: 'Arroz blanco',
         idTipoInsumo: tipoCereal.idTipoInsumo,
@@ -144,7 +140,6 @@ export async function seedInsumosBase(prisma: PrismaClient) {
         codigoBarra: '7891000011',
       },
       {
-        idOrganizacion: organizacion.idOrganizacion,
         nombreInsumo: 'Fideos',
         descripcion: 'Fideos largos',
         idTipoInsumo: tipoCereal.idTipoInsumo,
