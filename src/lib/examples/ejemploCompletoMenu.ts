@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { createPlatoWithPorciones, getPlatos, getPlatoById } from '@/lib/services/platoService-new';
+import { createPlatoWithPorciones, getPlatos, getPlatoById } from '@/lib/services/platoService';
 import { MenuService } from '@/lib/services/menuService';
 
 const prisma = new PrismaClient();

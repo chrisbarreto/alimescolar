@@ -48,46 +48,91 @@ interface DashboardMainProps {
 }
 
 export default function DashboardMain({ subSection }: DashboardMainProps) {
-  const { userSession, loading } = useAuth()
+  const { userSession, session, loading } = useAuth()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [activity, setActivity] = useState<DashboardActivity | null>(null)
-  const [statsLoading, setStatsLoading] = useState(true)
-  const [activityLoading, setActivityLoading] = useState(true)
+  const [statsLoading, setStatsLoading] = useState(false)
+  const [activityLoading, setActivityLoading] = useState(false)
+  const [statsLoaded, setStatsLoaded] = useState(false)
+
+  // Solo cargar datos cuando se muestre la sección principal del dashboard
+  const shouldLoadData = subSection === 'principal'
 
   useEffect(() => {
+    if (!shouldLoadData || statsLoaded || !session?.access_token) return
+
     const loadStats = async () => {
+      setStatsLoading(true)
       try {
-        const response = await fetch('/api/dashboard/stats')
+        const response = await fetch('/api/dashboard/stats', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        })
         if (response.ok) {
           const data = await response.json()
           setStats(data)
+        } else {
+          // Datos por defecto en caso de error
+          setStats({
+            menusActivos: { count: 0, cambio: 0, tipo: 'desde ayer' },
+            productos: { count: 0, nuevos: 0, tipo: 'últimos 7 días' },
+            usuarios: { count: 0, nuevos: 0, tipo: 'este mes' }
+          })
         }
       } catch (error) {
         console.error('Error loading stats:', error)
+        setStats({
+          menusActivos: { count: 0, cambio: 0, tipo: 'desde ayer' },
+          productos: { count: 0, nuevos: 0, tipo: 'últimos 7 días' },
+          usuarios: { count: 0, nuevos: 0, tipo: 'este mes' }
+        })
       } finally {
         setStatsLoading(false)
+        setStatsLoaded(true)
       }
     }
 
     const loadActivity = async () => {
+      setActivityLoading(true)
       try {
-        const response = await fetch('/api/dashboard/activity')
+        const response = await fetch('/api/dashboard/activity', {
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        })
         if (response.ok) {
-          const data = await response.json()
+          const result = await response.json()
+          const data = result.data || result
           setActivity(data)
+        } else {
+          // Datos por defecto en caso de error
+          setActivity({
+            menus: [],
+            productos: [],
+            usuarios: [],
+            ordenes: []
+          })
         }
       } catch (error) {
         console.error('Error loading activity:', error)
+        setActivity({
+          menus: [],
+          productos: [],
+          usuarios: [],
+          ordenes: []
+        })
       } finally {
         setActivityLoading(false)
       }
     }
 
-    if (userSession) {
+    // Solo cargar si tenemos sesión y necesitamos los datos
+    if (shouldLoadData) {
       loadStats()
       loadActivity()
     }
-  }, [userSession])
+  }, [shouldLoadData, session?.access_token, statsLoaded])
 
   if (loading || !userSession) {
     return (
@@ -189,10 +234,10 @@ export default function DashboardMain({ subSection }: DashboardMainProps) {
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
               </div>
-            ) : activity ? (
+            ) : activity && activity.menus && activity.productos ? (
               <div className="space-y-4">
                 {/* Mostrar actividad de menús */}
-                {activity.menus.slice(0, 3).map((item) => (
+                {(activity.menus || []).slice(0, 3).map((item) => (
                   <div key={item.id} className="flex items-start space-x-3">
                     <div className="flex-shrink-0">
                       <FoodIcon className="h-5 w-5 text-blue-500 mt-1" />
@@ -208,7 +253,7 @@ export default function DashboardMain({ subSection }: DashboardMainProps) {
                 ))}
                 
                 {/* Mostrar actividad de productos */}
-                {activity.productos.slice(0, 2).map((item) => (
+                {(activity.productos || []).slice(0, 2).map((item) => (
                   <div key={item.id} className="flex items-start space-x-3">
                     <div className="flex-shrink-0">
                       <InventoryIcon className="h-5 w-5 text-green-500 mt-1" />

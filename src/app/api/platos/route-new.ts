@@ -27,8 +27,7 @@ export async function POST(request: NextRequest) {
       nombre: body.nombre,
       descripcion: body.descripcion,
       esEjemplo: body.esEjemplo || false,
-      idTipoPlato: parseInt(body.idTipoPlato),
-      idEscuela: body.idEscuela
+      idTipoPlato: parseInt(body.idTipoPlato)
     };
 
     // Si vienen porciones, crear plato completo

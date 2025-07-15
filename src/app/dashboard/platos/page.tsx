@@ -117,9 +117,6 @@ export default function PlatosPage() {
                     <p className="text-gray-600 mb-3">{plato.descripcion}</p>
                   )}
                   
-                  <div className="text-sm text-gray-500 mb-3">
-                    <span className="font-medium">Escuela:</span> {plato.escuela.nombre}
-                  </div>
                 </div>
                 
                 <div className="flex space-x-2">

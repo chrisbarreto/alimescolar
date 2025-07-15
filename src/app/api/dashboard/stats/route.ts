@@ -32,7 +32,8 @@ export async function GET(request: Request) {
     const [
       menusActivos,
       totalProductos,
-      totalUsuarios
+      totalUsuarios,
+      totalPlatos
     ] = await Promise.all([
       // Menús activos (menús semanales creados en los últimos 30 días)
       prisma.menuSemanal.count({
@@ -44,15 +45,18 @@ export async function GET(request: Request) {
         }
       }),
       
-      // Total de productos/insumos - temporalmente 0 ya que no hay relación con organización
-      Promise.resolve(0),
+      // Total de insumos disponibles (no están vinculados a organización)
+      prisma.insumo.count(),
       
       // Total de usuarios en la organización
       prisma.usuario.count({
         where: {
           idOrganizacion: user.idOrganizacion
         }
-      })
+      }),
+
+      // Total de platos disponibles
+      prisma.plato.count()
     ])
 
     // Obtener datos para comparaciones (cambios desde ayer, etc.)
@@ -86,10 +90,14 @@ export async function GET(request: Request) {
       })
     ])
 
-    // Productos recientes - temporalmente 0 ya que no hay relación con organización
-    const productosRecientes = 0
-
-    // Organizaciones nuevas (últimos 30 días) - removido ya que no se usa
+    // Insumos recientes (últimos 7 días) 
+    const insumosRecientes = await prisma.insumo.count({
+      where: {
+        createdAt: {
+          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // últimos 7 días
+        }
+      }
+    })
 
     const stats = {
       menusActivos: {
@@ -99,13 +107,17 @@ export async function GET(request: Request) {
       },
       productos: {
         count: totalProductos,
-        nuevos: productosRecientes,
-        tipo: 'nuevos'
+        nuevos: insumosRecientes,
+        tipo: 'últimos 7 días'
       },
       usuarios: {
         count: totalUsuarios,
         nuevos: usuariosEstesMes,
         tipo: 'este mes'
+      },
+      platos: {
+        count: totalPlatos,
+        tipo: 'disponibles'
       }
     }
 

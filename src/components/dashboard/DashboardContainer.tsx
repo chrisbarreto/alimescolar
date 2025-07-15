@@ -1,14 +1,58 @@
 'use client'
 
 import { useDashboard } from '@/context/DashboardContext'
-import DashboardMain from './sections/DashboardMain'
-import PlatosSection from './sections/PlatosSection'
-import MenusSection from './sections/MenusSection'
-import InventarioSection from './sections/InventarioSection'
-import OrganizacionesSection from './sections/OrganizacionesSection'
-import UsuariosSection from './sections/UsuariosSection'
-import ReportesSection from './sections/ReportesSection'
-import ConfiguracionSection from './sections/ConfiguracionSection'
+import dynamic from 'next/dynamic'
+import { Suspense } from 'react'
+
+// Importaciones dinámicas para mejorar el rendimiento
+const DashboardMain = dynamic(() => import('./sections/DashboardMain').then(mod => ({ default: mod.default })), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+})
+
+const PlatosSection = dynamic(() => import('./sections/PlatosSection').then(mod => ({ default: mod.default })), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+})
+
+const MenusSection = dynamic(() => import('./sections/MenusSection').then(mod => ({ default: mod.default })), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+})
+
+const InventarioSection = dynamic(() => import('./sections/InventarioSection').then(mod => ({ default: mod.default })), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+})
+
+const OrganizacionesSection = dynamic(() => import('./sections/OrganizacionesSection').then(mod => ({ default: mod.default })), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+})
+
+const UsuariosSection = dynamic(() => import('./sections/UsuariosSection').then(mod => ({ default: mod.default })), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+})
+
+const ReportesSection = dynamic(() => import('./sections/ReportesSection').then(mod => ({ default: mod.default })), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+})
+
+const ConfiguracionSection = dynamic(() => import('./sections/ConfiguracionSection').then(mod => ({ default: mod.default })), {
+  loading: () => <LoadingSpinner />,
+  ssr: false
+})
+
+// Componente de loading simple
+function LoadingSpinner() {
+  return (
+    <div className="flex items-center justify-center min-h-96">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+  )
+}
 
 export default function DashboardContainer() {
   const { currentSection, currentSubSection } = useDashboard()

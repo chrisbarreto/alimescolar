@@ -31,12 +31,32 @@ interface PorcionData {
   observaciones?: string
 }
 
+interface RecetaInsumo {
+  idInsumo: string
+  cantidadPorRacion: number
+  idUnidadMedida: number
+  pesoBruto?: number
+  pesoNeto?: number
+}
+
+interface Insumo {
+  idInsumo: string
+  nombreInsumo: string
+  descripcion?: string
+  tipoInsumo: {
+    descTipoInsumo: string
+  }
+  unidadMedida: {
+    descUnidadMedida: string
+    abreviatura: string
+  }
+}
+
 interface PlatoData {
   nombre: string
   descripcion: string
   esEjemplo: boolean
   idTipoPlato: number
-  idEscuela: string
 }
 
 export default function CreatePlatoPage() {
@@ -46,15 +66,14 @@ export default function CreatePlatoPage() {
   const [nivelesEscolares, setNivelesEscolares] = useState<NivelEscolar[]>([])
   const [unidadesMedida, setUnidadesMedida] = useState<UnidadMedida[]>([])
   const [tiposPlato, setTiposPlato] = useState<TipoPlato[]>([])
-  const [escuela, setEscuela] = useState<any>(null)
+  const [insumos, setInsumos] = useState<Insumo[]>([])
   
-  // Estado del formulario
+  // Estados del formulario
   const [platoData, setPlatoData] = useState<PlatoData>({
     nombre: '',
     descripcion: '',
     esEjemplo: false,
-    idTipoPlato: 1,
-    idEscuela: ''
+    idTipoPlato: 1
   })
 
   const [porciones, setPorciones] = useState<PorcionData[]>([])
@@ -106,15 +125,6 @@ export default function CreatePlatoPage() {
         }
       }
 
-      // Obtener datos de la primera escuela (temporal)
-      const platosResponse = await fetch('/api/platos')
-      const platosData = await platosResponse.json()
-      if (platosData.success && platosData.data.length > 0) {
-        const primeraEscuela = platosData.data[0].escuela
-        setEscuela(primeraEscuela)
-        setPlatoData(prev => ({ ...prev, idEscuela: primeraEscuela.idEscuela }))
-      }
-
     } catch (error) {
       console.error('Error loading data:', error)
       alert('Error al cargar los datos iniciales')
@@ -134,11 +144,6 @@ export default function CreatePlatoPage() {
     
     if (!platoData.nombre.trim()) {
       alert('El nombre del plato es requerido')
-      return
-    }
-
-    if (!platoData.idEscuela) {
-      alert('Debe seleccionar una escuela')
       return
     }
 
@@ -253,17 +258,6 @@ export default function CreatePlatoPage() {
                   <span className="ml-2 text-sm text-gray-700">¿Es un plato de ejemplo?</span>
                 </label>
               </div>
-
-              {escuela && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Escuela
-                  </label>
-                  <div className="px-3 py-2 bg-gray-50 border border-gray-300 rounded-md">
-                    {escuela.nombre}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Porciones por nivel escolar */}

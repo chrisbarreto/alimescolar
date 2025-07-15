@@ -1,14 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getTiposPlato } from '@/lib/services/platoService';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export async function GET(request: NextRequest) {
   try {
-    const tipos = await getTiposPlato();
-    
-    return NextResponse.json({
-      success: true,
-      data: tipos
+    const tipos = await prisma.tipoPlato.findMany({
+      where: { activo: true },
+      orderBy: { orden: 'asc' }
     });
+
+    const response = {
+      success: true,
+      data: tipos.map(tipo => ({
+        idTipoPlato: tipo.idTipoPlato,
+        nombre: tipo.nombre,
+        descripcion: tipo.descripcion || undefined,
+        orden: tipo.orden
+      }))
+    };
+    
+    return NextResponse.json(response);
   } catch (error) {
     console.error('Error in tipos-plato API:', error);
     return NextResponse.json(

@@ -35,7 +35,6 @@ model Escuela {
   escuelaEncargado EscuelaEncargado[]
   menuSemanal      MenuSemanal[]
   ordenCompra      OrdenCompra[]
-  platos           Plato[]
 
   @@map("escuela")
 }
@@ -206,13 +205,11 @@ model Plato {
   descripcion       String?   @db.Text
   esEjemplo         Boolean   @default(false) @map("es_ejemplo")
   idTipoPlato       Int       @map("id_tipo_plato")
-  idEscuela         String    @map("id_escuela") @db.Uuid
   createdAt         DateTime? @default(now()) @map("created_at") @db.Timestamp(6)
   updatedAt         DateTime? @updatedAt @map("updated_at") @db.Timestamp(6)
 
   // relaciones
   tipoPlato       TipoPlato             @relation(fields: [idTipoPlato], references: [idTipoPlato])
-  escuela         Escuela               @relation(fields: [idEscuela], references: [idEscuela])
   porciones       PorcionNivelEscolar[]
   menuDiaPlato    MenuDiaPlato[]
   recetaPlato     RecetaPlato[]
