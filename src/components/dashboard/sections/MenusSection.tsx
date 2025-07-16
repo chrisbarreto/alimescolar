@@ -152,8 +152,8 @@ function CreateMenuComponent() {
         setEscuelas(escuelasData.data)
       }
 
-      // Cargar platos
-      const platosResponse = await fetch('/api/platos')
+      // Cargar platos desde la API de menús
+      const platosResponse = await fetch('/api/menus?action=platos')
       const platosData = await platosResponse.json()
       if (platosData.success) {
         setPlatos(platosData.data)
