@@ -10,11 +10,6 @@ const DashboardMain = dynamic(() => import('./sections/DashboardMain').then(mod 
   ssr: false
 })
 
-const PlatosSection = dynamic(() => import('./sections/PlatosSection').then(mod => ({ default: mod.default })), {
-  loading: () => <LoadingSpinner />,
-  ssr: false
-})
-
 const MenusSection = dynamic(() => import('./sections/MenusSection').then(mod => ({ default: mod.default })), {
   loading: () => <LoadingSpinner />,
   ssr: false
@@ -63,7 +58,14 @@ export default function DashboardContainer() {
         return <DashboardMain subSection={currentSubSection} />
       
       case 'platos':
-        return <PlatosSection subSection={currentSubSection} />
+        // Los platos se gestionan directamente en la base de datos
+        return (
+          <div className="text-center py-8">
+            <h2 className="text-xl font-semibold mb-4">Gestión de Platos</h2>
+            <p className="text-gray-600">Los platos se gestionan directamente en la base de datos.</p>
+            <p className="text-gray-600">Use la sección de Menús para crear menús semanales.</p>
+          </div>
+        )
       
       case 'menus':
         return <MenusSection subSection={currentSubSection} />

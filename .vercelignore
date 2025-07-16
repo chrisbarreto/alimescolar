@@ -1,0 +1,13 @@
+scripts/
+prisma/seed.ts
+prisma/seeds/
+*.md
+.env.local
+.env.example
+.git/
+node_modules/
+.next/
+test/
+tests/
+**/*.test.*
+**/*.spec.*

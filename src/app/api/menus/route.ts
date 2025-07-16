@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MenuService } from '@/lib/services/menuService';
+import { getPlatos } from '@/lib/services/platoService';
 
 // GET - Obtener menús semanales, escuelas disponibles, o calcular insumos
 export async function GET(request: NextRequest) {
@@ -13,6 +14,10 @@ export async function GET(request: NextRequest) {
       case 'escuelas':
         const escuelasResult = await MenuService.getEscuelasDisponibles();
         return NextResponse.json(escuelasResult);
+
+      case 'platos':
+        const platos = await getPlatos();
+        return NextResponse.json({ success: true, data: platos });
 
       case 'calcular-insumos':
         if (!idMenuSemanal) {
