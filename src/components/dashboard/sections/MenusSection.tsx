@@ -319,6 +319,22 @@ function CreateMenuComponent() {
       return
     }
 
+    // Validar datos antes de enviar
+    console.log('Datos a enviar:')
+    console.log('Selected escuela:', selectedEscuela)
+    console.log('Semana inicio:', semanaInicio)
+    console.log('Días con platos:', diasConPlatos)
+    
+    // Validar que todos los platos tengan IDs válidos
+    for (const dia of diasConPlatos) {
+      for (const plato of dia.platos) {
+        if (!plato.idPlato || plato.idPlato.trim() === '') {
+          alert(`Error: Se encontró un plato sin ID válido en el día ${dia.fecha}`)
+          return
+        }
+      }
+    }
+
     setLoading(true)
     try {
       // 1. Crear el menú semanal
@@ -340,7 +356,8 @@ function CreateMenuComponent() {
       const menuData = await responseMenu.json()
       
       if (!menuData.success) {
-        alert(`Error creando menú semanal: ${menuData.error}`)
+        console.error('Error del servidor:', menuData);
+        alert(`Error creando menú semanal: ${menuData.error}${menuData.details ? '\n\nDetalles: ' + JSON.stringify(menuData.details) : ''}`)
         return
       }
 
@@ -367,7 +384,11 @@ function CreateMenuComponent() {
 
         const diaData = await responseDia.json()
         if (!diaData.success) {
-          console.error(`Error creando día ${dia.fecha}:`, diaData.error)
+          console.error(`Error creando día ${dia.fecha}:`, diaData)
+          alert(`Error creando día ${dia.fecha}: ${diaData.error}${diaData.details ? '\n\nDetalles: ' + JSON.stringify(diaData.details) : ''}`)
+          // Continuar con los otros días aunque uno falle
+        } else {
+          console.log(`Día ${dia.fecha} creado exitosamente`)
         }
       }
 
@@ -569,7 +590,7 @@ function CreateMenuComponent() {
                 {/* Lista de platos agregados */}
                 <div className="space-y-2">
                   {dia.platos.map((plato, indicePlato) => (
-                    <div key={indicePlato} className="flex justify-between items-center bg-gray-50 p-2 rounded">
+                    <div key={`${indiceDia}-${plato.idPlato}-${indicePlato}`} className="flex justify-between items-center bg-gray-50 p-2 rounded">
                       <span className="text-sm">
                         {indicePlato + 1}. {getPlatoNombre(plato.idPlato)}
                       </span>
@@ -654,16 +675,16 @@ function CreateMenuComponent() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-7 gap-2">
+                  <div className="grid grid-cols-1 lg:grid-cols-7 gap-3">
                     {menu.menuDias.map((dia) => (
-                      <div key={dia.idMenuDia} className="bg-gray-50 p-2 rounded text-xs">
-                        <div className="font-medium">{getDayName(dia.fecha)}</div>
-                        <div className="text-gray-600">{new Date(dia.fecha).getDate()}</div>
-                        <div className="text-gray-600">{dia.cantidadRaciones} raciones</div>
-                        <div className="mt-1 space-y-1">
+                      <div key={dia.idMenuDia} className="bg-gray-50 p-3 rounded-lg shadow-sm border min-h-[160px]">
+                        <div className="font-semibold text-sm text-gray-800 mb-1">{getDayName(dia.fecha)}</div>
+                        <div className="text-gray-600 text-xs mb-1">{new Date(dia.fecha).getDate()}</div>
+                        <div className="text-blue-600 text-xs font-medium mb-2">👥 {dia.cantidadRaciones}</div>
+                        <div className="mt-2 space-y-1">
                           {dia.platos.map((plato) => (
-                            <div key={plato.idPlato} className="text-gray-800">
-                              {plato.nombre}
+                            <div key={`${dia.idMenuDia}-${plato.idPlato}`} className="text-gray-800 text-xs leading-relaxed">
+                              <span className="font-medium text-blue-700">•</span> {plato.nombre}
                             </div>
                           ))}
                         </div>
@@ -1207,30 +1228,30 @@ function ListMenusComponent() {
                     </div>
 
                     {/* Vista previa de los días */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-7 gap-3">
                       {menu.menuDias && menu.menuDias.length > 0 ? (
                         menu.menuDias.map((dia) => (
-                          <div key={dia.idMenuDia} className="bg-gray-50 p-3 rounded text-xs">
-                            <div className="font-medium text-center mb-1">
+                          <div key={dia.idMenuDia} className="bg-gray-50 p-4 rounded-lg shadow-sm border min-h-[180px]">
+                            <div className="font-semibold text-center mb-2 text-sm text-gray-800">
                               {getDayName(dia.fecha)}
                             </div>
-                            <div className="text-gray-600 text-center mb-2">
+                            <div className="text-gray-600 text-center mb-3 text-xs">
                               {new Date(dia.fecha).toLocaleDateString('es-ES', { 
                                 day: '2-digit', 
                                 month: '2-digit' 
                               })}
                             </div>
-                            <div className="text-blue-600 text-center mb-2 font-medium">
+                            <div className="text-blue-600 text-center mb-3 font-medium text-xs">
                               👥 {dia.cantidadRaciones}
                             </div>
-                            <div className="space-y-1">
-                              {dia.platos && dia.platos.slice(0, 3).map((plato) => (
-                                <div key={plato.idPlato} className="text-gray-800 truncate">
-                                  • {plato.nombre}
+                            <div className="space-y-2">
+                              {dia.platos && dia.platos.slice(0, 3).map((plato, index) => (
+                                <div key={`${dia.idMenuDia}-${plato.nombre}-${index}`} className="text-gray-800 text-xs leading-relaxed">
+                                  <span className="font-medium text-blue-700">•</span> {plato.nombre}
                                 </div>
                               ))}
                               {dia.platos && dia.platos.length > 3 && (
-                                <div className="text-gray-500 italic">
+                                <div className="text-gray-500 italic text-xs">
                                   +{dia.platos.length - 3} más...
                                 </div>
                               )}
@@ -1333,7 +1354,7 @@ function ListMenusComponent() {
                             </summary>
                             <div className="mt-2 space-y-1">
                               {insumo.detallesPorDia && insumo.detallesPorDia.map((detalle, index) => (
-                                <div key={index} className="text-xs">
+                                <div key={`${insumo.idInsumo}-${detalle.fecha}-${index}`} className="text-xs">
                                   <strong>{new Date(detalle.fecha).toLocaleDateString()}:</strong> {detalle.cantidadInsumo.toFixed(3)} {insumo.abreviatura} 
                                   ({detalle.cantidadRaciones} raciones)
                                   <div className="text-gray-400 ml-2">

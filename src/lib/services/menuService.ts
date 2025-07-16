@@ -61,6 +61,8 @@ export class MenuService {
    */
   static async createMenuSemanal(data: CreateMenuSemanalData) {
     try {
+      console.log('Creating menu semanal with data:', data);
+      
       // Verificar que no exista un menú para esa semana y escuela
       const existingMenu = await prisma.menuSemanal.findFirst({
         where: {
@@ -70,6 +72,7 @@ export class MenuService {
       });
 
       if (existingMenu) {
+        console.log('Menu already exists for week and school:', existingMenu);
         return {
           success: false,
           error: 'Ya existe un menú para esta semana y escuela'
@@ -99,6 +102,7 @@ export class MenuService {
         }
       });
 
+      console.log('Menu semanal created successfully:', menuSemanal.idMenuSemanal);
       return {
         success: true,
         data: menuSemanal,
@@ -108,7 +112,7 @@ export class MenuService {
       console.error('Error creating menu semanal:', error);
       return {
         success: false,
-        error: 'Error al crear el menú semanal',
+        error: `Error al crear el menú semanal: ${error instanceof Error ? error.message : 'Error desconocido'}`,
         details: error
       };
     }
@@ -236,6 +240,8 @@ export class MenuService {
     platos: MenuDiaPlatoData[]
   ) {
     try {
+      console.log('Creating menu dia with platos:', { idMenuSemanal, menuDiaData, platos });
+      
       const result = await prisma.$transaction(async (tx) => {
         // Crear el menú día
         const menuDia = await tx.menuDia.create({
@@ -247,10 +253,13 @@ export class MenuService {
           }
         });
 
+        console.log('Menu dia created:', menuDia.idMenuDia);
+
         // Crear los platos del menú día
         const platosCreados = await Promise.all(
-          platos.map((platoData, index) => 
-            tx.menuDiaPlato.create({
+          platos.map(async (platoData, index) => {
+            console.log(`Creating plato ${index + 1}:`, platoData);
+            return tx.menuDiaPlato.create({
               data: {
                 idMenuDia: menuDia.idMenuDia,
                 idPlato: platoData.idPlato,
@@ -268,10 +277,11 @@ export class MenuService {
                   }
                 }
               }
-            })
-          )
+            });
+          })
         );
 
+        console.log('All platos created successfully for dia:', menuDia.idMenuDia);
         return {
           menuDia,
           platos: platosCreados
@@ -287,7 +297,7 @@ export class MenuService {
       console.error('Error creating menu dia with platos:', error);
       return {
         success: false,
-        error: 'Error al crear el menú diario con platos',
+        error: `Error al crear el menú diario con platos: ${error instanceof Error ? error.message : 'Error desconocido'}`,
         details: error
       };
     }
@@ -400,14 +410,22 @@ export class MenuService {
             }
           },
           menuDia: {
-            select: {
-              idMenuDia: true,
-              fecha: true,
-              cantidadRaciones: true,
-              observaciones: true,
-              _count: {
-                select: {
-                  menuDiaPlato: true
+            include: {
+              menuDiaPlato: {
+                include: {
+                  plato: {
+                    include: {
+                      tipoPlato: {
+                        select: {
+                          nombre: true,
+                          orden: true
+                        }
+                      }
+                    }
+                  }
+                },
+                orderBy: {
+                  orden: 'asc'
                 }
               }
             },
@@ -421,10 +439,24 @@ export class MenuService {
         }
       });
 
-      // Mapear menuDia a menuDias para consistencia con el frontend
+      // Mapear menuDia a menuDias e incluir los nombres de los platos
       const mappedMenus = menus.map(menu => ({
         ...menu,
-        menuDias: menu.menuDia, // Mapear menuDia (Prisma) a menuDias (Frontend)
+        menuDias: menu.menuDia.map(dia => ({
+          idMenuDia: dia.idMenuDia,
+          fecha: dia.fecha,
+          cantidadRaciones: dia.cantidadRaciones,
+          observaciones: dia.observaciones,
+          platos: dia.menuDiaPlato.map(menuPlato => ({
+            nombre: menuPlato.plato.nombre,
+            tipo: menuPlato.plato.tipoPlato.nombre,
+            orden: menuPlato.orden || 1,
+            tipoOrden: menuPlato.plato.tipoPlato.orden
+          })).sort((a, b) => a.tipoOrden - b.tipoOrden), // Ordenar por tipo de plato
+          _count: {
+            menuDiaPlato: dia.menuDiaPlato.length
+          }
+        })),
         menuDia: undefined // Eliminar la propiedad original
       }));
 
@@ -525,9 +557,9 @@ export class MenuService {
                 idInsumo: insumo.idInsumo,
                 nombreInsumo: insumo.nombreInsumo,
                 cantidadTotal: 0,
-                idUnidadMedida: receta.idUnidadMedida,
-                unidadMedida: receta.unidadMedida.descUnidadMedida,
-                abreviatura: receta.unidadMedida.abreviatura,
+                idUnidadMedida: insumo.idUnidadMedida, // Usar la unidad del insumo, no de la receta
+                unidadMedida: insumo.unidadMedida.descUnidadMedida,
+                abreviatura: insumo.unidadMedida.abreviatura,
                 tipoInsumo: insumo.tipoInsumo.descTipoInsumo,
                 detallesPorDia: []
               });

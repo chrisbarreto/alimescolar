@@ -30,9 +30,9 @@ interface InsumoCalculado {
   nombreInsumo: string
   tipoInsumo: string
   cantidadTotal: number
+  idUnidadMedida?: number
   unidadMedida?: string
   abreviatura?: string
-  observaciones?: string
 }
 
 interface MenuInfo {
@@ -73,25 +73,28 @@ export const generarPDFOrdenCompra = async (
   // Preparar datos para la tabla - mostrar cantidad original y convertida
   const tableData = insumos.map((insumo) => {
     const cantidad = parseFloat(insumo.cantidadTotal.toString()) || 0
-    const esLiquido = insumo.abreviatura === 'ml' || insumo.abreviatura === 'l' || 
-                     insumo.unidadMedida === 'ml' || insumo.unidadMedida === 'mililitro' || 
-                     insumo.unidadMedida === 'litro' || insumo.unidadMedida === 'L' ||
-                     insumo.tipoInsumo?.toLowerCase().includes('líquido') ||
-                     insumo.tipoInsumo?.toLowerCase().includes('liquido') ||
-                     insumo.nombreInsumo?.toLowerCase().includes('aceite') ||
-                     insumo.nombreInsumo?.toLowerCase().includes('leche') ||
-                     insumo.nombreInsumo?.toLowerCase().includes('agua')
+    
+    // Usar PRIMERO el ID de unidad de medida para clasificar
+    const idUnidadMedidaNum = Number(insumo.idUnidadMedida)
+    
+    // Clasificar por ID de unidad de medida
+    const esUnidad = idUnidadMedidaNum === 5 // ID 5 = Unidades
+    const esLiquido = idUnidadMedidaNum === 3 || idUnidadMedidaNum === 4 || idUnidadMedidaNum === 11 // IDs 3,4,11 = ml, L, ml
     
     let cantidadFormateada: string
     
-    if (esLiquido) {
+    if (esUnidad) {
+      // Para unidades: mostrar solo la cantidad sin unidades de peso
+      const cantidadOriginal = formatearNumero(cantidad)
+      cantidadFormateada = `${cantidadOriginal} unidades`
+    } else if (esLiquido) {
       // Para líquidos: mostrar ml y L
       const cantidadOriginal = formatearNumero(cantidad)
       const litros = cantidad / 1000
       const cantidadConvertida = formatearNumero(litros)
       cantidadFormateada = `${cantidadOriginal} ml, ${cantidadConvertida} L`
     } else {
-      // Para sólidos: mostrar g y kg
+      // Para sólidos (IDs 1,2,10 = g, kg, g): mostrar g y kg
       const cantidadOriginal = formatearNumero(cantidad)
       const kilogramos = cantidad / 1000
       const cantidadConvertida = formatearNumero(kilogramos)
@@ -101,14 +104,13 @@ export const generarPDFOrdenCompra = async (
     return [
       insumo.nombreInsumo || 'Sin nombre',
       insumo.tipoInsumo || 'Sin categoría',
-      cantidadFormateada,
-      insumo.observaciones || '-'
+      cantidadFormateada
     ]
   })
 
   // Configurar la tabla
   autoTable(doc, {
-    head: [['Insumo', 'Categoría', 'Cantidad', 'Observaciones']],
+    head: [['Insumo', 'Categoría', 'Cantidad']],
     body: tableData,
     startY: 85,
     styles: {
@@ -124,36 +126,38 @@ export const generarPDFOrdenCompra = async (
       fillColor: [248, 250, 252] // Gris claro
     },
     columnStyles: {
-      0: { cellWidth: 55 }, // Insumo
-      1: { cellWidth: 40 }, // Categoría
-      2: { cellWidth: 50 }, // Cantidad (más ancho para ambas unidades)
-      3: { cellWidth: 40 }  // Observaciones
+      0: { cellWidth: 65 }, // Insumo (más ancho sin observaciones)
+      1: { cellWidth: 50 }, // Categoría (más ancho)
+      2: { cellWidth: 70 }  // Cantidad (más ancho para ambas unidades)
     }
   })
 
   // Agregar resumen total al final
+  // Verificar si cada insumo es unidad SOLO por el ID (ID 5 = Unidades)
+  const esUnidadFunc = (insumo: InsumoCalculado) => {
+    const idUnidadMedidaNum = Number(insumo.idUnidadMedida)
+    return idUnidadMedidaNum === 5
+  }
+  
+  // Verificar si es líquido por ID de unidad de medida
+  const esLiquidoFunc = (insumo: InsumoCalculado) => {
+    const idUnidadMedidaNum = Number(insumo.idUnidadMedida)
+    return idUnidadMedidaNum === 3 || idUnidadMedidaNum === 4 || idUnidadMedidaNum === 11 // IDs 3,4,11 = ml, L, ml
+  }
+  
+  // Calcular total de sólidos (excluyendo líquidos y unidades)
   const totalSolidos = insumos.filter(insumo => {
-    const esLiquido = insumo.abreviatura === 'ml' || insumo.abreviatura === 'l' || 
-                     insumo.unidadMedida === 'ml' || insumo.unidadMedida === 'mililitro' || 
-                     insumo.unidadMedida === 'litro' || insumo.unidadMedida === 'L' ||
-                     insumo.tipoInsumo?.toLowerCase().includes('líquido') ||
-                     insumo.tipoInsumo?.toLowerCase().includes('liquido') ||
-                     insumo.nombreInsumo?.toLowerCase().includes('aceite') ||
-                     insumo.nombreInsumo?.toLowerCase().includes('leche') ||
-                     insumo.nombreInsumo?.toLowerCase().includes('agua')
-    return !esLiquido
+    return !esLiquidoFunc(insumo) && !esUnidadFunc(insumo)
   }).reduce((total, insumo) => total + (parseFloat(insumo.cantidadTotal.toString()) || 0), 0)
 
+  // Calcular total de líquidos
   const totalLiquidos = insumos.filter(insumo => {
-    const esLiquido = insumo.abreviatura === 'ml' || insumo.abreviatura === 'l' || 
-                     insumo.unidadMedida === 'ml' || insumo.unidadMedida === 'mililitro' || 
-                     insumo.unidadMedida === 'litro' || insumo.unidadMedida === 'L' ||
-                     insumo.tipoInsumo?.toLowerCase().includes('líquido') ||
-                     insumo.tipoInsumo?.toLowerCase().includes('liquido') ||
-                     insumo.nombreInsumo?.toLowerCase().includes('aceite') ||
-                     insumo.nombreInsumo?.toLowerCase().includes('leche') ||
-                     insumo.nombreInsumo?.toLowerCase().includes('agua')
-    return esLiquido
+    return esLiquidoFunc(insumo)
+  }).reduce((total, insumo) => total + (parseFloat(insumo.cantidadTotal.toString()) || 0), 0)
+
+  // Calcular total de unidades
+  const totalUnidades = insumos.filter(insumo => {
+    return esUnidadFunc(insumo)
   }).reduce((total, insumo) => total + (parseFloat(insumo.cantidadTotal.toString()) || 0), 0)
 
   const totalKg = totalSolidos / 1000
@@ -170,6 +174,10 @@ export const generarPDFOrdenCompra = async (
   }
   if (totalLiquidos > 0) {
     doc.text(`TOTAL LÍQUIDOS: ${formatearNumero(totalLitros)} L`, 20, yPos)
+    yPos += 8
+  }
+  if (totalUnidades > 0) {
+    doc.text(`TOTAL UNIDADES: ${formatearNumero(totalUnidades)} unidades`, 20, yPos)
     yPos += 8
   }
   
