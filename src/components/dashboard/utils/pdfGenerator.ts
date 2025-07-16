@@ -70,8 +70,15 @@ export const generarPDFOrdenCompra = async (
   doc.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 20, 64)
   doc.text(`Total de insumos: ${insumos.length}`, 20, 72)
 
+  // Ordenar insumos alfabéticamente por nombre
+  const insumosOrdenados = [...insumos].sort((a, b) => {
+    const nombreA = (a.nombreInsumo || 'Sin nombre').toLowerCase()
+    const nombreB = (b.nombreInsumo || 'Sin nombre').toLowerCase()
+    return nombreA.localeCompare(nombreB, 'es', { sensitivity: 'base' })
+  })
+
   // Preparar datos para la tabla - mostrar cantidad original y convertida
-  const tableData = insumos.map((insumo) => {
+  const tableData = insumosOrdenados.map((insumo) => {
     const cantidad = parseFloat(insumo.cantidadTotal.toString()) || 0
     
     // Usar PRIMERO el ID de unidad de medida para clasificar
