@@ -1,9 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
 import { useSidebar } from '@/context/SidebarContext'
+import { useDashboard } from '@/context/DashboardContext'
 import { useAuth } from '@/hooks/useAuth'
 import { 
   DashboardIcon, 
@@ -32,7 +31,8 @@ const ChevronIcon = ({ isOpen, className = "w-4 h-4" }: { isOpen: boolean, class
 // Tipos para la estructura del menú
 interface SubMenuItem {
   name: string
-  href: string
+  section: string
+  subSection: string
   badge?: string
   badgeColor?: string
 }
@@ -40,7 +40,8 @@ interface SubMenuItem {
 interface MenuItem {
   name: string
   icon: React.ComponentType<{ className?: string }>
-  href?: string
+  section?: string
+  subSection?: string
   subItems?: SubMenuItem[]
   badge?: string
   badgeColor?: string
@@ -59,27 +60,36 @@ const menuStructure: MenuGroup[] = [
         name: "Dashboard",
         icon: DashboardIcon,
         subItems: [
-          { name: "Principal", href: "/dashboard" },
-          { name: "Analíticas", href: "/dashboard/analytics", badge: "PRO", badgeColor: "blue" },
-          { name: "Estadísticas", href: "/dashboard/stats", badge: "NEW", badgeColor: "green" }
+          { name: "Principal", section: "dashboard", subSection: "principal" },
+          { name: "Analíticas", section: "dashboard", subSection: "analytics", badge: "PRO", badgeColor: "blue" },
+          { name: "Estadísticas", section: "dashboard", subSection: "stats", badge: "NEW", badgeColor: "green" }
+        ]
+      },
+      {
+        name: "Platos",
+        icon: FoodIcon,
+        subItems: [
+          { name: "Lista de Platos", section: "platos", subSection: "list-platos" },
+          { name: "Crear Plato", section: "platos", subSection: "create-plato" },
+          { name: "Gestionar Porciones", section: "platos", subSection: "porciones" }
         ]
       },
       {
         name: "Gestión de Menús",
         icon: FoodIcon,
         subItems: [
-          { name: "Crear Menú", href: "/dashboard/menus/create" },
-          { name: "Lista de Menús", href: "/dashboard/menus" },
-          { name: "Planificación", href: "/dashboard/menus/planning", badge: "PRO", badgeColor: "blue" }
+          { name: "Lista de Menús", section: "menus", subSection: "list-menus" },
+          { name: "Crear Menú", section: "menus", subSection: "create-menu" },
+          { name: "Planificación", section: "menus", subSection: "planning", badge: "PRO", badgeColor: "blue" }
         ]
       },
       {
         name: "Inventario",
         icon: InventoryIcon,
         subItems: [
-          { name: "Productos", href: "/dashboard/inventario/productos" },
-          { name: "Stock", href: "/dashboard/inventario/stock", badge: "NEW", badgeColor: "green" },
-          { name: "Proveedores", href: "/dashboard/inventario/proveedores" }
+          { name: "Productos", section: "inventario", subSection: "productos" },
+          { name: "Stock", section: "inventario", subSection: "stock", badge: "NEW", badgeColor: "green" },
+          { name: "Proveedores", section: "inventario", subSection: "proveedores" }
         ]
       }
     ]
@@ -91,18 +101,17 @@ const menuStructure: MenuGroup[] = [
         name: "Organizaciones",
         icon: OrganizationIcon,
         subItems: [
-          { name: "Escuelas", href: "/dashboard/organizaciones/escuelas" },
-          { name: "Distritos", href: "/dashboard/organizaciones/distritos" },
-          { name: "Regiones", href: "/dashboard/organizaciones/regiones" }
+          { name: "Lista de Organizaciones", section: "organizaciones", subSection: "list-organizaciones" },
+          { name: "Crear Organización", section: "organizaciones", subSection: "create-organizacion" }
         ]
       },
       {
         name: "Usuarios",
         icon: UsersIcon,
         subItems: [
-          { name: "Gestionar Usuarios", href: "/dashboard/usuarios" },
-          { name: "Roles", href: "/dashboard/usuarios/roles", badge: "PRO", badgeColor: "blue" },
-          { name: "Permisos", href: "/dashboard/usuarios/permisos", badge: "PRO", badgeColor: "blue" }
+          { name: "Lista de Usuarios", section: "usuarios", subSection: "list-usuarios" },
+          { name: "Crear Usuario", section: "usuarios", subSection: "create-usuario" },
+          { name: "Roles", section: "usuarios", subSection: "roles", badge: "PRO", badgeColor: "blue" }
         ]
       }
     ]
@@ -114,15 +123,16 @@ const menuStructure: MenuGroup[] = [
         name: "Reportes",
         icon: ChartIcon,
         subItems: [
-          { name: "Nutricional", href: "/dashboard/reportes/nutricional" },
-          { name: "Financiero", href: "/dashboard/reportes/financiero", badge: "PRO", badgeColor: "blue" },
-          { name: "Consumo", href: "/dashboard/reportes/consumo" }
+          { name: "Ventas", section: "reportes", subSection: "ventas" },
+          { name: "Inventario", section: "reportes", subSection: "inventario-report" },
+          { name: "Nutricional", section: "reportes", subSection: "nutricional" }
         ]
       },
       {
         name: "Configuración",
         icon: SettingsIcon,
-        href: "/dashboard/configuracion"
+        section: "configuracion",
+        subSection: "general"
       }
     ]
   }
@@ -130,8 +140,8 @@ const menuStructure: MenuGroup[] = [
 
 export default function Sidebar() {
   const { sidebarOpen, setSidebarOpen } = useSidebar()
+  const { currentSection, currentSubSection, setCurrentSection } = useDashboard()
   const { userSession } = useAuth()
-  const pathname = usePathname()
   const [openSubmenus, setOpenSubmenus] = useState<string[]>([])
 
   const toggleSubmenu = (itemName: string) => {
@@ -140,6 +150,10 @@ export default function Sidebar() {
         ? prev.filter(name => name !== itemName)
         : [...prev, itemName]
     )
+  }
+
+  const handleNavigation = (section: string, subSection: string) => {
+    setCurrentSection(section as any, subSection as any)
   }
 
   const isSubmenuOpen = (itemName: string) => openSubmenus.includes(itemName)
@@ -218,29 +232,28 @@ export default function Sidebar() {
                   const isOpen = isSubmenuOpen(item.name)
                   
                   // Si no tiene subitems, es un enlace directo
-                  if (!hasSubItems && item.href) {
-                    const isActive = pathname === item.href
+                  if (!hasSubItems && item.section) {
+                    const isActive = currentSection === item.section && currentSubSection === item.subSection
                     return (
-                      <Link
+                      <button
                         key={item.name}
-                        href={item.href}
+                        onClick={() => handleNavigation(item.section!, item.subSection || 'principal')}
                         className={`
-                          flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200
+                          flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200
                           ${isActive 
                             ? 'bg-blue-50 text-blue-700' 
                             : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
                           }
                         `}
-                        onClick={() => setSidebarOpen(false)}
                       >
                         <Icon className={`mr-3 h-5 w-5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
-                        <span className="flex-1">{item.name}</span>
+                        <span className="flex-1 text-left">{item.name}</span>
                         {item.badge && (
                           <span className={getBadgeStyles(item.badgeColor || 'blue')}>
                             {item.badge}
                           </span>
                         )}
-                      </Link>
+                      </button>
                     )
                   }
 
@@ -265,27 +278,26 @@ export default function Sidebar() {
                       {isOpen && item.subItems && (
                         <div className="ml-6 mt-1 space-y-1">
                           {item.subItems.map((subItem) => {
-                            const isActive = pathname === subItem.href
+                            const isActive = currentSection === subItem.section && currentSubSection === subItem.subSection
                             return (
-                              <Link
+                              <button
                                 key={subItem.name}
-                                href={subItem.href}
+                                onClick={() => handleNavigation(subItem.section, subItem.subSection)}
                                 className={`
-                                  flex items-center px-3 py-2 text-sm rounded-lg transition-colors duration-200
+                                  flex items-center w-full px-3 py-2 text-sm rounded-lg transition-colors duration-200
                                   ${isActive 
                                     ? 'bg-blue-50 text-blue-700 font-medium' 
                                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                                   }
                                 `}
-                                onClick={() => setSidebarOpen(false)}
                               >
-                                <span className="flex-1">{subItem.name}</span>
+                                <span className="flex-1 text-left">{subItem.name}</span>
                                 {subItem.badge && (
                                   <span className={getBadgeStyles(subItem.badgeColor || 'blue')}>
                                     {subItem.badge}
                                   </span>
                                 )}
-                              </Link>
+                              </button>
                             )
                           })}
                         </div>

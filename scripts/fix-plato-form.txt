@@ -1,0 +1,10 @@
+// Solución simple para el problema del formulario de platos
+// Solo necesitamos quitar el atributo 'required' del campo peso neto
+// para evitar la validación HTML5 cuando el formulario ya tiene ingredientes
+
+// Buscar en PlatosSection.tsx la línea que dice:
+// <input type="number" step="0.001" required value={nuevoInsumo.pesoNeto || ''}...
+// Y cambiarla por:
+// <input type="number" step="0.001" value={nuevoInsumo.pesoNeto || ''}...
+
+// ¡Eso es todo! El required del campo peso neto es lo que causa el problema.
