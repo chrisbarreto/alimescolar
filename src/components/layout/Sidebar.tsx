@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useSidebar } from '@/context/SidebarContext'
 import { useDashboard } from '@/context/DashboardContext'
 import { useAuth } from '@/hooks/useAuth'
+import { useLogout } from '@/context/LogoutContext'
 import { 
   DashboardIcon, 
   UsersIcon, 
@@ -142,6 +143,7 @@ export default function Sidebar() {
   const { sidebarOpen, setSidebarOpen } = useSidebar()
   const { currentSection, currentSubSection, setCurrentSection } = useDashboard()
   const { userSession } = useAuth()
+  const { isLoggingOut, logout } = useLogout()
   const [openSubmenus, setOpenSubmenus] = useState<string[]>([])
 
   const toggleSubmenu = (itemName: string) => {
@@ -159,13 +161,7 @@ export default function Sidebar() {
   const isSubmenuOpen = (itemName: string) => openSubmenus.includes(itemName)
 
   const handleLogout = async () => {
-    try {
-      const { AuthService } = await import('@/lib/auth')
-      await AuthService.signOut()
-      window.location.href = '/login'
-    } catch (error) {
-      console.error('Error al cerrar sesión:', error)
-    }
+    await logout()
   }
 
   const getBadgeStyles = (color: string) => {
@@ -332,10 +328,26 @@ export default function Sidebar() {
           {/* Botón de logout */}
           <button
             onClick={handleLogout}
-            className="flex items-center w-full px-3 py-2 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors duration-200"
+            disabled={isLoggingOut}
+            className={`
+              flex items-center w-full px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200
+              ${isLoggingOut 
+                ? 'text-gray-400 bg-gray-50 cursor-not-allowed' 
+                : 'text-red-600 hover:bg-red-50'
+              }
+            `}
           >
-            <LogoutIcon className="mr-3 h-4 w-4" />
-            Cerrar Sesión
+            {isLoggingOut ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-400 mr-3"></div>
+                Cerrando...
+              </>
+            ) : (
+              <>
+                <LogoutIcon className="mr-3 h-4 w-4" />
+                Cerrar Sesión
+              </>
+            )}
           </button>
         </div>
       </div>
